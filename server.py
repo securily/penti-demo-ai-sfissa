@@ -48,6 +48,20 @@ BLOCKED_PATTERNS = [
     re.compile(r"\bnc\b"),
     re.compile(r"https?://", re.I),
 ]
+
+
+def _has_unquoted_shell_meta(command: str) -> bool:
+    """Reject ; | & outside quotes so python3 -c can still use semicolons."""
+    in_single = False
+    in_double = False
+    for ch in command:
+        if ch == "'" and not in_double:
+            in_single = not in_single
+        elif ch == '"' and not in_single:
+            in_double = not in_double
+        elif not in_single and not in_double and ch in {";", "|", "&"}:
+            return True
+    return False
 WRITE_NAME = "csp.py"
 _KEY_ENV = {
     "gemini": ("GEMINI_API_KEY", "GOOGLE_API_KEY"),
@@ -238,6 +252,8 @@ def validate_command(command: str) -> Tuple[bool, str]:
     token = _first_token(cmd)
     if token not in ALLOWED_BINARIES:
         return False, f"Allowed commands: {', '.join(sorted(ALLOWED_BINARIES))}"
+    if _has_unquoted_shell_meta(cmd):
+        return False, "Blocked pattern: unquoted shell chaining"
     if _touches_env_file(cmd):
         return False, "Cannot read env files"
     dest = _redirect_dest(cmd)
@@ -306,13 +322,13 @@ SYSTEM_PROMPT = """You close a missing-header finding for Northstar.
 A scanner already ran. Read scan/zap-report.json. Find the login code that is missing
 Content-Security-Policy. Write the fix to fix/csp.py.
 
-When the next slice is write-fix, write this exact file (two lines) with python3 or echo:
+When the next slice is write-fix, write this exact file (two lines) with python3:
 
 CSP = "default-src 'self'"
 # sets response header Content-Security-Policy to that value
 
-Example command:
-python3 -c 'open("fix/csp.py","w").write("CSP = \\"default-src \\'self\\'\\"\\n# sets response header Content-Security-Policy to that value\\n")'
+Example command (copy this — it uses chr() so the quotes stay valid):
+python3 -c "open('fix/csp.py','w').write('CSP = '+chr(34)+'default-src '+chr(39)+'self'+chr(39)+chr(34)+chr(10)+'# sets response header Content-Security-Policy to that value'+chr(10))"
 
 Do not EXIT until that file exists with those two lines.
 

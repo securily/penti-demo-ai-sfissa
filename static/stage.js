@@ -691,6 +691,7 @@
       var printed = await apiPost("/api/step/print", { command: cmd, parsed: loopDraft.parsed || {}, history: history });
       if (!stillCurrent(gen) || !loopDraft) return;
       loopDraft.stdout = printed.stdout;
+      loopDraft.stderr = printed.stderr;
       loopDraft.printData = printed;
       if (printed.dod) lastDod = printed.dod;
       if ((printed.command || "").toUpperCase() === "EXIT") finding = findingTextFrom(printed);
@@ -710,6 +711,7 @@
         turn: loopDraft.turn,
         command: loopDraft.command,
         stdout: loopDraft.stdout,
+        stderr: loopDraft.stderr || "",
         finding: (loopDraft.parsed && loopDraft.parsed.finding) || "",
         dod: loopDraft.printData && loopDraft.printData.dod
       });
@@ -789,7 +791,7 @@
       try {
         var p = await apiPost("/api/step/print", { command: cmd, parsed: parsed, history: history });
         if (!stillCurrent(gen) || !loopDraft) return;
-        loopDraft.stdout = p.stdout; loopDraft.printData = p;
+        loopDraft.stdout = p.stdout; loopDraft.stderr = p.stderr; loopDraft.printData = p;
         if (p.dod) lastDod = p.dod;
         if ((p.command || "").toUpperCase() === "EXIT") finding = findingTextFrom(p);
         frames[pos] = { html: printScene(round, p), meta: meta };
@@ -806,6 +808,7 @@
         turn: loopDraft.turn,
         command: loopDraft.command,
         stdout: loopDraft.stdout,
+        stderr: loopDraft.stderr || "",
         finding: (loopDraft.parsed && loopDraft.parsed.finding) || "",
         dod: loopDraft.printData && loopDraft.printData.dod
       });

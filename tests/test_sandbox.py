@@ -40,3 +40,34 @@ def test_execute_echo_does_not_print_key(monkeypatch):
     assert code == 0
     assert "secret-should-not-leak" not in stdout
     assert "none" in stdout
+
+
+def test_validate_blocks_unquoted_shell_chaining():
+    for cmd in (
+        "cat scan/zap-report.json; cat .env",
+        "cat scan/zap-report.json | cat",
+        "echo hi && cat app/login.py",
+        "echo hi || cat app/login.py",
+        "echo hi &",
+    ):
+        ok, err = server.validate_command(cmd)
+        assert ok is False, cmd
+        assert "chaining" in err.lower()
+
+
+def test_prompt_write_example_writes_csp(tmp_path, monkeypatch):
+    monkeypatch.setattr(server, "ROOT", tmp_path)
+    monkeypatch.setattr(server, "FIX", tmp_path / "fix")
+    server.FIX.mkdir()
+    cmd = (
+        "python3 -c \"open('fix/csp.py','w').write('CSP = '+chr(34)+'default-src '"
+        "+chr(39)+'self'+chr(39)+chr(34)+chr(10)+'# sets response header "
+        "Content-Security-Policy to that value'+chr(10))\""
+    )
+    ok, err = server.validate_command(cmd)
+    assert ok is True, err
+    stdout, stderr, code = server.execute_command(cmd)
+    assert code == 0, stderr
+    body = (tmp_path / "fix" / "csp.py").read_text(encoding="utf-8")
+    assert 'CSP = "default-src \'self\'"' in body
+    assert "Content-Security-Policy" in body
