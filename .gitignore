@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.env.demo-keys
+.DS_Store
+.pytest_cache/
+*.egg-info/
+books/leftover.csv
+books/adjusting_entry.csv
+fix/csp.py
+.composer-eval/
