@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Northstar — missing Content-Security-Policy</title>
+  <link rel="icon" href="/assets/penti_icon_color.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/presentation.css?v=ds18" />
+</head>
+<body class="wiz-body demo-repl" data-demo="repl">
+  <div class="wiz">
+    <header class="wiz-header">
+      <div class="wiz-logo">
+        <img src="/assets/penti-ai-logo-black.svg" alt="penti" height="18" />
+        <span class="wiz-sub">loop</span>
+      </div>
+
+      <nav class="wiz-rail" id="rail" aria-label="Loop progress"></nav>
+
+      <div class="wiz-meta">
+        <span class="wiz-counter" id="counter">[ 01 / 04 ]</span>
+        <button type="button" class="wiz-autoplay" id="btnAutoplay">Autoplay</button>
+        <button type="button" class="wiz-gear" id="btnSettings" title="Model &amp; keys">settings</button>
+        <button type="button" class="wiz-restart" id="btnRestartTop">restart</button>
+      </div>
+    </header>
+
+    <main class="wiz-main" id="stage" aria-live="polite"></main>
+    <section id="execution-board" class="execution-board" aria-label="One-screen loop">
+      <div class="board-panes">
+        <article class="board-pane" id="board-pane-read" data-step="read" data-state="wait">
+          <header class="board-pane-h">
+            <span class="pc-badge" style="--pc:var(--p0)">R</span>
+            <div>
+              <p class="board-plain">Look</p>
+              <p class="board-name">Read</p>
+            </div>
+          </header>
+          <div class="board-pane-body" id="board-body-read"><p class="board-wait">Waiting…</p></div>
+        </article>
+        <article class="board-pane" id="board-pane-eval" data-step="eval" data-state="wait">
+          <header class="board-pane-h">
+            <span class="pc-badge" style="--pc:var(--p1)">E</span>
+            <div>
+              <p class="board-plain">Decide</p>
+              <p class="board-name">Eval</p>
+            </div>
+          </header>
+          <div class="board-pane-body" id="board-body-eval"><p class="board-wait">Waiting…</p></div>
+        </article>
+        <article class="board-pane" id="board-pane-print" data-step="print" data-state="wait">
+          <header class="board-pane-h">
+            <span class="pc-badge" style="--pc:var(--p2)">P</span>
+            <div>
+              <p class="board-plain">Do</p>
+              <p class="board-name">Print</p>
+            </div>
+          </header>
+          <div class="board-pane-body" id="board-body-print"><p class="board-wait">Waiting…</p></div>
+        </article>
+        <article class="board-pane" id="board-pane-loop" data-step="loop" data-state="wait">
+          <header class="board-pane-h">
+            <span class="pc-badge" style="--pc:var(--p3)">↻</span>
+            <div>
+              <p class="board-plain">Repeat</p>
+              <p class="board-name">Loop</p>
+            </div>
+          </header>
+          <div class="board-pane-body" id="board-body-loop"><p class="board-wait">Waiting…</p></div>
+        </article>
+      </div>
+      <div class="board-dod" id="boardDod" aria-label="Live DoD registry"></div>
+    </section>
+
+    <footer class="wiz-foot">
+      <button type="button" class="wiz-back" id="btnBack">‹ Back</button>
+      <button type="button" class="wiz-next" id="btnNext">Begin ›</button>
+      <p class="wiz-hint" id="hint">Space or → to advance · ← to go back</p>
+    </footer>
+  </div>
+
+  <div class="wiz-modal" id="settingsModal" hidden>
+    <div class="wiz-modal-card">
+      <h3>Session settings</h3>
+      <div class="wiz-field">
+        <label for="modelSelect">Model</label>
+        <select id="modelSelect"></select>
+      </div>
+      <div class="wiz-field ssm-key-list" id="keyFlags" aria-label="Provider keys"></div>
+      <div class="wiz-modal-actions">
+        <button type="button" class="wiz-modal-reset" id="btnReset">Restart scan</button>
+        <button type="button" class="wiz-modal-close" id="btnCloseSettings">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="wiz-toast"></div>
+  <script src="/shared/dod-ui.js?v=ds18"></script>
+  <script src="/stage.js?v=ds18"></script>
+</body>
+</html>
