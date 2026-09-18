@@ -65,23 +65,20 @@
         );
       })
       .join("");
-    var heading = opts.heading === false ? "" : '<p class="dod-heading">Definition of done</p>';
+    var heading = opts.heading === false ? "" : '<p class="dod-heading">DOD — what we are set to complete</p>';
     var note = "";
     if (dod.complete) {
-      note = '<p class="dod-note pass">All slices checked.</p>';
+      note = '<p class="dod-note pass">Every DOD row is checked.</p>';
     } else if (dod.verification && dod.verification.ok === false) {
-      note = '<p class="dod-note fail">Slice did not pass — retry the same DoD id.</p>';
+      note = '<p class="dod-note fail">That DOD row did not pass — retry the same DOD id.</p>';
     } else if (dod.next) {
-      note = '<p class="dod-note">Next slice: <strong>' + escapeHtml(dod.next.id) + "</strong></p>";
+      note = '<p class="dod-note">This turn’s DOD: <strong>' + escapeHtml(dod.next.id) + "</strong></p>";
     }
     return heading + '<ol class="dod-registry">' + items + "</ol>" + note;
   }
 
   function shortDodTitle(row) {
     var t = String((row && row.title) || "");
-    if (/register/i.test(t)) return "The register";
-    if (/cash/i.test(t)) return "The cash";
-    if (/match/i.test(t)) return "The books match";
     return t;
   }
 

@@ -1,16 +1,22 @@
-# Penti demo — SFISSA Workshop #2
-
 <p align="center">
-  <a href="https://penti.ai"><img src="docs/penti-logo.svg" alt="Penti" height="36" /></a>
+  <img src="docs/readme-lockup.png" width="420" alt="Penti and South Florida ISSA">
 </p>
 
-**Stop Chatting. Start Looping: Live Agents in Production for Cybersecurity Tasks**
+<h1 align="center">Penti demo — SFISSA Workshop #2</h1>
 
-SFISSA Workshop #2 · Friday, September 18, 2026 · 15:00–15:45 EDT
+<p align="center">
+  <strong>Stop Chatting. Start Looping</strong><br>
+  Live agents in production for cybersecurity tasks
+</p>
 
-A scanner already ran. It found one missing security header. The agent reads the report, finds the code that's missing it, and writes the fix. Look, decide, do, repeat.
+<p align="center">
+  Friday, September 18, 2026 · 15:00–15:45 EDT · Boca Raton<br>
+  Proud sponsor of <a href="https://www.sfissahtf.com/">Hack the Flag and Chili Cookoff</a>
+</p>
 
-This is a local Read → Eval → Print → Loop REPL. It does **not** run a live scan, and it does not send traffic to any host.
+A local **Look → Decide → Do → Repeat** REPL. OWASP ZAP already ran. One finding remains: `/login` is missing Content-Security-Policy.
+
+**DOD** means Definition of Done — the checklist this turn is set to complete. We do not scan live, and we do not send traffic to any host.
 
 ---
 
@@ -25,11 +31,11 @@ This is a local Read → Eval → Print → Loop REPL. It does **not** run a liv
 | Risk | Medium |
 | URL | `https://app.northstar.example/login` |
 
-The agent:
+Each turn completes one DOD row:
 
-1. Reads `scan/zap-report.json` (the JSON file **is** the scan)
-2. Reads `app/login.py` (the login handler has no Content-Security-Policy)
-3. Writes `fix/csp.py` with `CSP = "default-src 'self'"`
+1. **DOD-01** — See the CSP finding in the ZAP report (`scan/zap-report.json` **is** the scan)
+2. **DOD-02** — See the login handler that is missing the header (`app/login.py`)
+3. **DOD-03** — Write `fix/csp.py` with `CSP = "default-src 'self'"`
 
 ---
 
@@ -39,7 +45,7 @@ The agent:
 - **Python 3.10 or newer** (`python3 --version`)
 - **At least one LLM API key** — Gemini is the fastest to mint
 
-You do **not** need AWS, Docker, or a Penti account. A stranger with only `GEMINI_API_KEY` can finish this README.
+You do **not** need AWS, Docker, or a Penti account. One `GEMINI_API_KEY` is enough to finish this README.
 
 ---
 
@@ -101,7 +107,7 @@ In a browser: **http://127.0.0.1:8785**
 
 Click **settings** (top right) to confirm keys show `present`. Pick a model.
 
-**On stage:** press **Autoplay** once. One press runs exactly one full loop (Look → Decide → Do → Repeat) on a single **execution board**. A second press runs the next loop. **Next** still walks the loop by hand. **Restart** resets.
+**On stage:** press **Autoplay** once. One press runs exactly one full turn (Look → Decide → Do → Repeat) on a single **execution board**. Look shows the OWASP ZAP results. **Next** after a pause starts the next turn. If you never press Autoplay, **Next** walks the same loop by hand. **Restart** resets.
 
 ---
 
@@ -109,24 +115,24 @@ Click **settings** (top right) to confirm keys show `present`. Pick a model.
 
 Each round is four beats:
 
-1. **Look** — the agent reads `scan/zap-report.json` or `app/login.py`
-2. **Decide** — it picks one command (and you can **Run and compare** another model)
-3. **Do** — the command runs in a sandbox
-4. **Repeat** — keep the result and look again
+1. **Look** — read the OWASP ZAP results (and later, the login code)
+2. **Decide** — ask a language model for one command (and you can **Run and compare** another model)
+3. **Do** — run that command in a sandbox
+4. **Repeat** — check the result against the DOD, then pause or start the next turn
 
-Definition of done (on screen):
+DOD on screen (Definition of Done — what we are set to complete):
 
-1. See the finding: Content-Security-Policy header not set (plugin 10038)
-2. See that `app/login.py` does not set Content-Security-Policy
-3. Write `fix/csp.py` so it sets `Content-Security-Policy: default-src 'self'`
+1. **DOD-01** — See the finding: Content-Security-Policy header not set (plugin 10038)
+2. **DOD-02** — See that `app/login.py` does not set Content-Security-Policy
+3. **DOD-03** — Write `fix/csp.py` so it sets `Content-Security-Policy: default-src 'self'`
 
 Allowed commands: `cat`, `head`, `ls`, `grep`, `python3`, `echo`, and writing `fix/csp.py`. No network from the sandbox.
 
 ---
 
-## Restart the scan
+## Restart this demo
 
-If a run already wrote `fix/csp.py`, open **settings** → **Restart scan**, or stop the server and delete `fix/csp.py`. Then refresh the page.
+If a run already wrote `fix/csp.py`, open **settings** → **Restart this demo**, or stop the server and delete `fix/csp.py`. Then refresh the page.
 
 ---
 
@@ -147,7 +153,7 @@ python -m pytest -q
 | Settings says a key is `missing` | The value is empty or `.env` is in the wrong folder. Keys must be in `penti-demo-ai-sfissa/.env`. Restart `python server.py` after editing. |
 | “No API key for …” when you hit Decide | Same as above — restart after saving `.env`. |
 | Port already in use | Something else is on 8785. Stop it. Do not change the port. |
-| Cursor models fail | Use Gemini, OpenAI, or Claude. Those three are the stranger path. |
+| Cursor models fail | Use Gemini, OpenAI, or Claude. |
 
 ---
 

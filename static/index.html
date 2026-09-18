@@ -3,102 +3,160 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Northstar — missing Content-Security-Policy</title>
+  <title>Northstar — OWASP ZAP results, missing CSP</title>
   <link rel="icon" href="/assets/penti_icon_color.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/presentation.css?v=ds18" />
+  <link rel="stylesheet" href="/presentation.css?v=ds37" />
 </head>
 <body class="wiz-body demo-repl" data-demo="repl">
   <div class="wiz">
     <header class="wiz-header">
       <div class="wiz-logo">
         <img src="/assets/penti-ai-logo-black.svg" alt="penti" height="18" />
-        <span class="wiz-sub">loop</span>
+        <span class="wiz-sub">Look · Decide · Do · Repeat</span>
       </div>
 
-      <nav class="wiz-rail" id="rail" aria-label="Loop progress"></nav>
+      <nav class="wiz-rail" id="rail" aria-label="Turn progress"></nav>
 
       <div class="wiz-meta">
         <span class="wiz-counter" id="counter">[ 01 / 04 ]</span>
         <button type="button" class="wiz-autoplay" id="btnAutoplay">Autoplay</button>
-        <button type="button" class="wiz-gear" id="btnSettings" title="Model &amp; keys">settings</button>
+        <button type="button" class="wiz-gear" id="btnSettings" title="Pick a model and check API keys">settings</button>
         <button type="button" class="wiz-restart" id="btnRestartTop">restart</button>
       </div>
     </header>
 
     <main class="wiz-main" id="stage" aria-live="polite"></main>
-    <section id="execution-board" class="execution-board" aria-label="One-screen loop">
+    <section id="execution-board" class="execution-board" aria-label="One-screen turn">
+      <aside class="board-zap" id="boardZap" aria-label="OWASP ZAP results">
+        <p class="board-zap-cap">OWASP ZAP results — a baseline already ran. We are not scanning live.</p>
+        <pre class="board-zap-out" id="boardZapOut">Alert: Content Security Policy (CSP) Header Not Set
+Plugin: 10038 · Risk: Medium
+URL: https://app.northstar.example/login
+What ZAP said: The response does not include a Content-Security-Policy header.
+What ZAP wants: Set the Content-Security-Policy response header.</pre>
+      </aside>
       <div class="board-panes">
         <article class="board-pane" id="board-pane-read" data-step="read" data-state="wait">
           <header class="board-pane-h">
             <span class="pc-badge" style="--pc:var(--p0)">R</span>
             <div>
               <p class="board-plain">Look</p>
-              <p class="board-name">Read</p>
+              <p class="board-name">Read ZAP</p>
             </div>
           </header>
-          <div class="board-pane-body" id="board-body-read"><p class="board-wait">Waiting…</p></div>
+          <div class="board-pane-body" id="board-body-read"></div>
         </article>
         <article class="board-pane" id="board-pane-eval" data-step="eval" data-state="wait">
           <header class="board-pane-h">
             <span class="pc-badge" style="--pc:var(--p1)">E</span>
             <div>
               <p class="board-plain">Decide</p>
-              <p class="board-name">Eval</p>
+              <p class="board-name">Ask the model</p>
             </div>
           </header>
-          <div class="board-pane-body" id="board-body-eval"><p class="board-wait">Waiting…</p></div>
+          <div class="board-pane-body" id="board-body-eval"></div>
         </article>
         <article class="board-pane" id="board-pane-print" data-step="print" data-state="wait">
           <header class="board-pane-h">
             <span class="pc-badge" style="--pc:var(--p2)">P</span>
             <div>
               <p class="board-plain">Do</p>
-              <p class="board-name">Print</p>
+              <p class="board-name">Run it</p>
             </div>
           </header>
-          <div class="board-pane-body" id="board-body-print"><p class="board-wait">Waiting…</p></div>
+          <div class="board-pane-body" id="board-body-print"></div>
         </article>
         <article class="board-pane" id="board-pane-loop" data-step="loop" data-state="wait">
           <header class="board-pane-h">
             <span class="pc-badge" style="--pc:var(--p3)">↻</span>
             <div>
               <p class="board-plain">Repeat</p>
-              <p class="board-name">Loop</p>
+              <p class="board-name">Check DOD</p>
             </div>
           </header>
-          <div class="board-pane-body" id="board-body-loop"><p class="board-wait">Waiting…</p></div>
+          <div class="board-pane-body" id="board-body-loop"></div>
         </article>
       </div>
-      <div class="board-dod" id="boardDod" aria-label="Live DoD registry"></div>
+      <div class="board-dod" id="boardDod" aria-label="Live DOD checklist"></div>
     </section>
 
     <footer class="wiz-foot">
       <button type="button" class="wiz-back" id="btnBack">‹ Back</button>
       <button type="button" class="wiz-next" id="btnNext">Begin ›</button>
-      <p class="wiz-hint" id="hint">Space or → to advance · ← to go back</p>
+      <p class="wiz-hint" id="hint">Space or → to go forward · ← to go back</p>
     </footer>
   </div>
 
   <div class="wiz-modal" id="settingsModal" hidden>
     <div class="wiz-modal-card">
-      <h3>Session settings</h3>
+      <h3>Models and keys</h3>
       <div class="wiz-field">
-        <label for="modelSelect">Model</label>
+        <label for="modelSelect">Language model</label>
         <select id="modelSelect"></select>
       </div>
       <div class="wiz-field ssm-key-list" id="keyFlags" aria-label="Provider keys"></div>
       <div class="wiz-modal-actions">
-        <button type="button" class="wiz-modal-reset" id="btnReset">Restart scan</button>
+        <button type="button" class="wiz-modal-reset" id="btnReset">Restart this demo</button>
         <button type="button" class="wiz-modal-close" id="btnCloseSettings">Done</button>
       </div>
     </div>
   </div>
 
+  <div class="llm-modal" id="llmModal" data-role="model" hidden>
+    <div class="llm-modal-card" role="dialog" aria-live="polite" aria-label="Asking the language model">
+      <p class="llm-modal-kicker">Asking the language model</p>
+      <div class="llm-pulse" data-phase="request">
+        <div class="llm-pulse-track" aria-hidden="true">
+          <span class="llm-node llm-you">
+            <span class="llm-node-lab">You</span>
+            <i class="llm-burst"></i>
+          </span>
+          <span class="llm-wire">
+            <i class="llm-beam"></i>
+            <i class="llm-pkt a"></i>
+            <i class="llm-pkt b"></i>
+            <i class="llm-pkt c"></i>
+          </span>
+          <span class="llm-node llm-model">
+            <span class="llm-node-lab">LLM</span>
+            <i class="llm-orbit"></i>
+            <i class="llm-orbit late"></i>
+            <i class="llm-core"></i>
+          </span>
+        </div>
+        <p class="llm-pulse-title">Sending this prompt to the model…</p>
+        <p class="llm-pulse-sub">the model</p>
+        <p class="llm-cost" id="llmCost" data-ready="0" data-vs="" aria-hidden="true" aria-live="polite">
+          <span class="llm-cost-row">
+            <span class="llm-cost-lab">This call cost</span>
+            <span class="llm-cost-usd" id="llmCostUsd"></span>
+          </span>
+          <span class="llm-cost-vs" id="llmCostVs" hidden></span>
+        </p>
+        <div class="llm-io">
+          <div class="llm-io-col llm-io-out">
+            <span class="llm-io-cap">Prompt we sent</span>
+            <pre class="llm-io-text" id="llmPrompt"></pre>
+          </div>
+          <div class="llm-io-col llm-io-in">
+            <span class="llm-io-cap">What the model sent back</span>
+            <pre class="llm-io-text" id="llmReply"></pre>
+          </div>
+        </div>
+        <ol class="llm-steps">
+          <li data-s="request">Send</li>
+          <li data-s="wait">Think</li>
+          <li data-s="receive">Reply</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="wiz-toast"></div>
-  <script src="/shared/dod-ui.js?v=ds18"></script>
-  <script src="/stage.js?v=ds18"></script>
+  <script src="/shared/dod-ui.js?v=ds37"></script>
+  <script src="/stage.js?v=ds37"></script>
 </body>
 </html>

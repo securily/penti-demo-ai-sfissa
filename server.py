@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Northstar CSP scan-to-fix REPL — FastAPI on :8785.
 
-Env keys first. Optional staff SSM uses EDU_SSM_PREFIX from a gitignored .env.
+Env keys first. Optional SSM backfill uses EDU_SSM_PREFIX from a gitignored .env.
 Never logs key values or parameter paths. No network tools. The JSON file is the scan.
 """
 
@@ -590,7 +590,7 @@ async def reset() -> Dict[str, Any]:
 @app.post("/api/step/read")
 async def step_read(body: TurnRequest) -> Dict[str, Any]:
     if len(body.history) >= MAX_TURNS:
-        raise HTTPException(400, f"This demo allows at most {MAX_TURNS} REPL loops.")
+        raise HTTPException(400, f"This demo allows at most {MAX_TURNS} turns.")
     user_prompt = _build_user_prompt(body.history)
     return {
         "turn": _turn_number(body.history),
@@ -603,7 +603,7 @@ async def step_read(body: TurnRequest) -> Dict[str, Any]:
 @app.post("/api/step/eval")
 async def step_eval(body: TurnRequest) -> Dict[str, Any]:
     if len(body.history) >= MAX_TURNS:
-        raise HTTPException(400, f"This demo allows at most {MAX_TURNS} REPL loops.")
+        raise HTTPException(400, f"This demo allows at most {MAX_TURNS} turns.")
     user_prompt = _build_user_prompt(body.history)
     try:
         response_text, usage = _llm_generate(body.provider, body.model, SYSTEM_PROMPT, user_prompt)
@@ -701,21 +701,40 @@ def _parse_judge_reply(text: str, n: int) -> Tuple[int, List[int], str]:
     return max(1, min(n or 1, winner)), scores[: n or len(scores)], verdict
 
 
-_TECH_VERDICT = re.compile(
-    r"echo|python3|\\\\n|\\n|backslash|newline|`|-e\b|candidate\s*\d|"
-    r"dod-\d|command|flag|grep|pluginid",
-    re.I,
-)
+def _extract_action(command: str) -> str:
+    cmd = (command or "").strip()
+    low = cmd.lower()
+    if not cmd:
+        return "No command. Worth 0."
+    if cmd.upper() == "EXIT":
+        return "Stop and report the finding."
+    if "zap-report" in low:
+        return "Read the OWASP ZAP results (see the CSP finding)."
+    if "login.py" in low:
+        return "Read the login handler (the page missing the header)."
+    if "csp.py" in low or "fix/" in low:
+        return "Write the CSP fix file."
+    if low.startswith("ls"):
+        return "List files in the folder."
+    if low.startswith(("cat ", "head ", "grep ")):
+        return "Read a file: " + cmd
+    return "Run this command: " + cmd
 
 
-def _business_verdict(verdict: str, pick_label: str) -> str:
+def _business_verdict(verdict: str, pick_label: str, actions: List[str]) -> str:
     text = re.sub(r"\s+", " ", (verdict or "").strip())
-    if text and not _TECH_VERDICT.search(text):
+    if text and not text.startswith("{") and not text.startswith("```") and len(text) > 12:
         return text
     name = pick_label or "This model"
+    useful = next((a for a in actions if a and not a.startswith("No command")), "")
+    if useful and len(set(actions)) == 1:
+        return (
+            f"{name} wins on cost, not on writing. Both replies do the same useful thing: {useful} "
+            "The longer essay is not extra value."
+        )
     return (
-        f"{name} is closest to closing the missing-header finding. "
-        "The others have not yet named the gap or written the fix."
+        f"{name} wins on the useful action, not the essay. "
+        + (useful or "The useful move is the one that finishes this DOD row.")
     )
 
 
@@ -725,26 +744,50 @@ async def judge(body: JudgeRequest) -> Dict[str, Any]:
     provider = "gemini" if flags.get("gemini") else ("openai" if flags.get("openai") else "anthropic")
     model = next((m["model"] for m in REPL_MODELS if m["provider"] == provider), "")
     n = len(body.candidates)
+    extracted: List[Dict[str, str]] = []
+    for cand in body.candidates:
+        cmd = str(cand.get("command") or "").strip()
+        extracted.append(
+            {
+                "label": str(cand.get("label") or ""),
+                "command": cmd,
+                "action": _extract_action(cmd),
+                "cost": str(cand.get("cost_usd") if cand.get("cost_usd") is not None else ""),
+            }
+        )
     lines = [
-        "You are briefing a workshop room, not an engineer.",
-        "Score each option 1-10 on whether it is closest to closing the missing-header finding.",
+        "You are a pragmatic judge. Extra words are not value.",
+        "Extract the useful action from each reply: the one command, and what it does for this DOD row.",
+        "Ignore essays, length, tone, hedging, and extra explanation. Those score 0.",
+        "A long reply with the same command is not better. Same useful action = same score.",
+        "If the useful actions are the same, pick the cheaper call as winner.",
+        "If one action finishes the DOD row and the other does not, the useful one wins even if it is shorter.",
         'JSON only, no fences: {"winner":1,"scores":[8,9],"verdict":"..."}',
-        "verdict: two short sentences in plain language. Name the winning model.",
-        "Never mention commands, flags, files, code, newlines, or the word Candidate.",
+        "verdict: two short sentences. Name the winner. Name the useful action. Say if the other was the same action with more text.",
+        "",
+        "Packets (score ACTION + COMMAND only):",
     ]
-    for i, cand in enumerate(body.candidates, start=1):
-        lines.append(f"{i}. {cand.get('label')}: {cand.get('command')} — {cand.get('reasoning')}")
+    for i, item in enumerate(extracted, start=1):
+        essay = str(body.candidates[i - 1].get("reasoning") or "").strip()
+        cost = item["cost"]
+        cost_bit = f" · this call cost {cost}" if cost != "" else ""
+        lines.append(f"{i}. {item['label']}{cost_bit}")
+        lines.append(f"USEFUL ACTION: {item['action']}")
+        lines.append(f"COMMAND: {item['command'] or '—'}")
+        if essay:
+            lines.append("ESSAY (do not score): " + essay[:280])
+        lines.append("")
     text, usage = _llm_generate(
         provider,
         model,
-        "You brief a workshop. Verdicts stay non-technical. JSON only.",
+        "You are a pragmatic judge. Score the useful action only. Extra text is worth 0. JSON only.",
         "\n".join(lines),
     )
     winner, scores, verdict = _parse_judge_reply(text, n)
     pick = ""
     if 1 <= winner <= n:
-        pick = str(body.candidates[winner - 1].get("label") or "").split("·")[0].strip()
-    verdict = _business_verdict(verdict, pick)
+        pick = str(extracted[winner - 1].get("label") or "").split("·")[0].strip()
+    verdict = _business_verdict(verdict, pick, [e["action"] for e in extracted])
     return {
         "winner": winner,
         "scores": scores,
@@ -752,6 +795,7 @@ async def judge(body: JudgeRequest) -> Dict[str, Any]:
         "judge_model": model,
         "usage": usage,
         "judge_cost_usd": (usage or {}).get("estimated_cost"),
+        "extracted": extracted,
     }
 
 

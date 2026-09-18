@@ -1,11 +1,12 @@
 # GOAL — close the missing-header finding
 
-Northstar already ran a canned OWASP ZAP baseline.
+Northstar already ran OWASP ZAP. The results are in scan/zap-report.json.
 One finding remains: Content-Security-Policy is not set on /login.
 
-Read the report. Read the login handler. Write the fix.
+DOD means Definition of Done — the checklist of what we are set to complete.
+One DOD row per turn. Do not skip ahead.
 
-One slice per loop.
+Read the ZAP results. Read the login handler. Write the fix.
 
 ```dod
 DOD-01 | unchecked | cmd | see-finding | scan | scan/zap-report.json | See the CSP finding
